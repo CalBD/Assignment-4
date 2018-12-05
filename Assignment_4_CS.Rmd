@@ -1,0 +1,127 @@
+---
+title: "Bio720 Assignment 4 - CS"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+title: "Assignment 4"
+author: "Caleb Seo"
+date: "December 2 2018"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(colorspace)
+
+```
+
+#Question 2
+
+```{r}
+diploid_sim = function(W_AA, W_Aa, W_aa, initial_p = 0.01, num_cycles = 100, plot = TRUE){
+  
+  p = rep(initial_p, num_cycles)
+  mean_fitness = numeric(1)
+  
+  for(i in 2:num_cycles){
+    
+    mean_fitness = p[i-1]^2 * W_AA +
+                   p[i-1] * (1.0 - p[i-1]) * W_Aa +
+                   (p[i-1] - 1.0)^2 * W_aa
+    
+    p[i] = p[i-1]^2 * W_AA / mean_fitness +
+            p[i-1] * (1.0 - p[i-1]) * W_Aa / mean_fitness
+    
+  }
+  
+  if(plot){
+    
+    plot(p ~ seq(1:num_cycles), xlab = "Number of Generations", ylab = "Allele A Proportion",
+          pch = 2)
+    
+  }
+  
+  return(p)
+  
+}
+```
+```{r}
+diploid_sim(0.95, 0.81, 0.7)
+```
+
+#Question 3
+
+```{r}
+genetic_drift = function(pop_size, generations, 
+                        alleles = c("A", "a"), 
+                        init_freq = c(0.5,0.5),
+                        ploidy = 2,
+                        plot = TRUE){
+  
+  stopifnot(length(alleles) == length(init_freq))
+  
+  allele_count = pop_size * ploidy
+  counts = data.frame(matrix(0, nrow = generations, ncol = length(alleles)))
+  colnames(counts) = alleles
+  
+  pop = character(allele_count)
+  prev_pop = character(0)
+  
+   for(i in 1:length(alleles)){
+    
+    prev_pop = c(prev_pop, rep(alleles[i], allele_count*init_freq[i]))
+    
+  }
+  
+   for(i in 1:generations){
+
+     for(j in 1:allele_count){
+
+      pop[j] = sample(prev_pop, 1)
+
+    }
+
+    for(j in 1:length(alleles)){
+
+      counts[[j]][i] = sum(pop == alleles[j])/allele_count
+
+    }
+
+    prev_pop = pop
+
+  }
+  
+  counts = rbind(init_freq, counts)
+  colnames(counts) = alleles
+
+  if(plot){
+
+    newPlot = ggplot(counts) +
+            labs(x = "Number of Generations Passed", y = "Allellic Frequency")
+    cols = rainbow_hcl(length(alleles), c = 115, l = 55)
+
+    for(i in 1:length(alleles)){
+
+       newPlot = newPlot + geom_line(aes_string(x = seq(1:(generations + 1)), y = alleles[i]),
+                                    col = cols[i])
+
+    }
+
+     print(newPlot)
+
+     }
+  
+    return(counts)
+  
+}
+  
+```
+```{r}
+genetic_drift(100, 500, alleles = c("A", "a"), 
+                    init_freq = c(1/2, 1/2), 
+                    ploidy = 2)
+```
